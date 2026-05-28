@@ -1,0 +1,235 @@
+.page {
+  min-height: 100vh;
+  width: 100%;
+  background: #ffffff;
+  color: #111827;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+}
+
+/* Fixed 16:9 canvas so the exported PNG drops straight onto a slide. */
+.inner {
+  width: 1280px;
+  height: 720px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Download control — screen only, excluded from the captured PNG. */
+.toolbar {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  z-index: 10;
+}
+
+.toolbar button {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #2563eb;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.toolbar button:hover {
+  background: #1d4ed8;
+}
+.toolbar button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.asof {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Global stat cards */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.stat {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #fafafa;
+}
+.statLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.statValue {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.statSub {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* Charts row (fills remaining height) */
+.chartsRow {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.chartCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.chartHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.coin {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.coinName {
+  font-size: 16px;
+  font-weight: 700;
+}
+.coinSym {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+.price {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: right;
+}
+.badge {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.range {
+  font-size: 11px;
+  color: #6b7280;
+  margin: 2px 0 6px;
+}
+.chartFill {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Top winners strip along the bottom */
+.winnersStrip {
+  margin-top: 14px;
+}
+.winnersHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.winnersTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+.winnersSub {
+  font-size: 12px;
+  color: #6b7280;
+}
+.winnersGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.winnerCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.winnerTop {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.winnerTop img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+.winnerRank {
+  font-size: 11px;
+  color: #9aa3b2;
+  font-weight: 600;
+}
+.winnerSym {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.winnerPrice {
+  font-size: 13px;
+  color: #374151;
+}
+.winnerChange {
+  font-size: 15px;
+  font-weight: 700;
+  color: #15a866;
+}
+
+.pos {
+  color: #15a866;
+}
+.neg {
+  color: #d92d20;
+}
+.badgePos {
+  color: #15a866;
+  background: #e7f7ef;
+}
+.badgeNeg {
+  color: #d92d20;
+  background: #fdeceb;
+}
