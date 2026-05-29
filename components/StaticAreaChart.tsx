@@ -71,8 +71,8 @@ export default function StaticAreaChart({
         <Bar
           yAxisId="vol"
           dataKey="volume"
-          fill="#cbd5e1"
-          fillOpacity={0.7}
+          fill="#94a3b8"
+          fillOpacity={0.95}
           isAnimationActive={false}
         />
         <Area

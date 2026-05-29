@@ -27,17 +27,6 @@ const DAYS = 30;
 const WINNERS_COUNT = 5;
 const WINNERS_UNIVERSE = 100;
 
-function rangeLabel(points: ChartPoint[]): string {
-  if (points.length === 0) return "";
-  const fmt = (t: number) =>
-    new Date(t).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  return `${fmt(points[0].t)} – ${fmt(points[points.length - 1].t)}`;
-}
-
 // Inline remote images as data URIs so they survive client-side PNG export
 // (html-to-image can't read cross-origin <img> pixels otherwise).
 async function toDataUri(url: string): Promise<string> {
@@ -88,13 +77,16 @@ function ChangeBadge({ pct }: { pct: number }) {
 }
 
 export default async function ReportPage() {
-  const [global, btc, eth, cmc20, winnersRes] = await Promise.all([
-    getGlobal(),
-    loadCoin("bitcoin"),
-    loadCoin("ethereum"),
-    loadIndexValue(CMC20_ID),
-    getTop30dWinners(WINNERS_COUNT, WINNERS_UNIVERSE),
-  ]);
+  const [global, btc, eth, cmc20, winnersRes, cgLogo, claudeLogo] =
+    await Promise.all([
+      getGlobal(),
+      loadCoin("bitcoin"),
+      loadCoin("ethereum"),
+      loadIndexValue(CMC20_ID),
+      getTop30dWinners(WINNERS_COUNT, WINNERS_UNIVERSE),
+      toDataUri("https://www.coingecko.com/favicon-96x96.png"),
+      toDataUri("https://claude.ai/images/claude_app_icon.png"),
+    ]);
 
   // Inline winner logos so they render in the exported PNG.
   const winners = await Promise.all(
@@ -119,11 +111,6 @@ export default async function ReportPage() {
       </div>
 
       <div className={styles.inner} id="report-capture">
-        <div className={styles.header}>
-          <h1 className={styles.title}>Crypto Market Snapshot</h1>
-          <span className={styles.asof}>As of {asOf}</span>
-        </div>
-
         <div className={styles.stats}>
           <div className={styles.stat}>
             <div className={styles.statLabel}>Total Market Cap</div>
@@ -171,9 +158,6 @@ export default async function ReportPage() {
                   <ChangeBadge pct={changePct} />
                 </div>
               </div>
-              <div className={styles.range}>
-                {rangeLabel(points)} · price + volume
-              </div>
               <div className={styles.chartFill}>
                 <StaticAreaChart points={points} color={meta.color} />
               </div>
@@ -205,6 +189,22 @@ export default async function ReportPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className={styles.footer}>
+          <span className={styles.asof}>As of {asOf}</span>
+          <div className={styles.credits}>
+            <span className={styles.credit}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={cgLogo} alt="CoinGecko" width={16} height={16} />
+              Data: CoinGecko
+            </span>
+            <span className={styles.credit}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={claudeLogo} alt="Claude" width={16} height={16} />
+              Created by Claude
+            </span>
           </div>
         </div>
       </div>
