@@ -139,6 +139,12 @@
   margin-left: 7px;
   color: #6b7280;
 }
+.compactValue small.pos {
+  color: #15a866;
+}
+.compactValue small.neg {
+  color: #d92d20;
+}
 .exCard {
   border: 1px solid #e5e7eb;
   border-radius: 12px;

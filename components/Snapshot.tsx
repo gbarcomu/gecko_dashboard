@@ -89,24 +89,31 @@ function toWeeklyUsd(
 
   const sorted = [...daily].sort((a, b) => a.t - b.t);
   if (sorted.length === 0) return [];
-  const start = sorted[0].t;
+  // Bucket backwards from the most recent day so weeks are full; the leftover
+  // oldest days form a short bucket that we drop.
+  const end = sorted[sorted.length - 1].t;
   const week = 7 * 86_400_000;
-  const buckets = new Map<number, { t: number; sum: number }>();
+  const buckets = new Map<number, { t: number; usd: number }[]>();
   for (const d of sorted) {
     const usd = d.value * (priceByDay.get(dayKey(d.t)) ?? fallbackPrice);
-    const wk = Math.floor((d.t - start) / week);
-    const b = buckets.get(wk) ?? { t: start + wk * week, sum: 0 };
-    b.sum += usd;
-    buckets.set(wk, b);
+    const idx = Math.floor((end - d.t) / week);
+    const b = buckets.get(idx) ?? [];
+    b.push({ t: d.t, usd });
+    buckets.set(idx, b);
   }
   return [...buckets.values()]
+    .filter((items) => items.length === 7) // full weeks only
+    .map((items) => ({
+      t: Math.min(...items.map((i) => i.t)),
+      value: items.reduce((s, i) => s + i.usd, 0),
+    }))
     .sort((a, b) => a.t - b.t)
     .map((b) => ({
       label: new Date(b.t).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       }),
-      value: b.sum,
+      value: b.value,
     }));
 }
 
