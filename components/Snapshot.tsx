@@ -2,12 +2,23 @@ import {
   getGlobal,
   getMarketChart,
   getTopWinners,
+  getExchangeVolumeChart,
   type ChangePeriod,
 } from "@/lib/coingecko";
 import { formatCompact, formatPrice } from "@/lib/format";
 import StaticAreaChart, { type ChartPoint } from "@/components/StaticAreaChart";
+import StaticVolumeChart from "@/components/StaticVolumeChart";
 import DownloadButton from "@/components/DownloadButton";
 import styles from "./snapshot.module.css";
+
+const CMC20_LOGO =
+  "https://coin-images.coingecko.com/coins/images/71188/large/cmc20.png?1766223823";
+
+export interface ExchangeOpt {
+  id: string;
+  name: string;
+  logo: string;
+}
 
 const COINS = {
   bitcoin: {
@@ -79,10 +90,12 @@ export default async function Snapshot({
   days,
   period,
   periodLabel,
+  exchange,
 }: {
   days: number;
   period: ChangePeriod;
   periodLabel: string; // e.g. "30-Day" / "1-Year"
+  exchange?: ExchangeOpt; // when set, show compact stats + this exchange's volume
 }) {
   const [global, btc, eth, cmc20, winnersRes, cgLogo, claudeLogo] =
     await Promise.all([
@@ -98,6 +111,18 @@ export default async function Snapshot({
   const winners = await Promise.all(
     winnersRes.data.map(async (w) => ({ ...w, image: await toDataUri(w.image) })),
   );
+
+  // Compact-top extras (only when an exchange is supplied).
+  const ex = exchange
+    ? await (async () => {
+        const [vol, cmc20Logo, exLogo] = await Promise.all([
+          getExchangeVolumeChart(exchange.id, days),
+          toDataUri(CMC20_LOGO),
+          toDataUri(exchange.logo),
+        ]);
+        return { points: vol.data, cmc20Logo, exLogo };
+      })()
+    : null;
 
   const g = global.data;
   const asOf = new Date().toLocaleString("en-US", {
@@ -115,40 +140,90 @@ export default async function Snapshot({
       <div className={styles.toolbar}>
         <DownloadButton
           targetId="report-capture"
-          fileName={`crypto-market-snapshot-${period}.png`}
+          fileName={
+            exchange
+              ? `crypto-${exchange.id}-snapshot.png`
+              : `crypto-market-snapshot-${period}.png`
+          }
         />
       </div>
 
       <div className={styles.inner} id="report-capture">
-        <div className={styles.stats}>
-          <div className={styles.stat}>
-            <div className={styles.statLabel}>Total Market Cap</div>
-            <div className={styles.statValue}>
-              {formatCompact(g.total_market_cap.usd, "usd")}
+        {ex && exchange ? (
+          <div className={styles.compactTop}>
+            <div className={styles.compactStats}>
+              <div className={styles.compactRow}>
+                <span className={styles.compactLabel}>Total Market Cap</span>
+                <span className={styles.compactValue}>
+                  {formatCompact(g.total_market_cap.usd, "usd")}
+                </span>
+              </div>
+              <div className={styles.compactRow}>
+                <span className={styles.compactLabel}>BTC Dominance</span>
+                <span className={styles.compactValue}>
+                  {g.market_cap_percentage.btc?.toFixed(1)}%
+                  <small>ETH {g.market_cap_percentage.eth?.toFixed(1)}%</small>
+                </span>
+              </div>
+              <div className={styles.compactRow}>
+                <span className={styles.compactLabel}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={ex.cmc20Logo} alt="CMC20" width={18} height={18} />
+                  CMC20 Index
+                </span>
+                <span className={styles.compactValue}>
+                  {formatPrice(cmc20.current)}
+                  <small className={cmc20.changePct >= 0 ? styles.pos : styles.neg}>
+                    {cmc20.changePct >= 0 ? "+" : ""}
+                    {cmc20.changePct.toFixed(1)}% {period}
+                  </small>
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div className={styles.stat}>
-            <div className={styles.statLabel}>BTC Dominance</div>
-            <div className={styles.statValue}>
-              {g.market_cap_percentage.btc?.toFixed(1)}%
-            </div>
-            <div className={styles.statSub} style={{ color: "#6b7280" }}>
-              ETH {g.market_cap_percentage.eth?.toFixed(1)}%
+            <div className={styles.exCard}>
+              <div className={styles.exHead}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={ex.exLogo} alt={exchange.name} width={20} height={20} />
+                <span>{exchange.name}</span>
+                <span className={styles.exSub}>· 30d volume (BTC)</span>
+              </div>
+              <div className={styles.exFill}>
+                <StaticVolumeChart points={ex.points} color="#2563eb" />
+              </div>
             </div>
           </div>
+        ) : (
+          <div className={styles.stats}>
+            <div className={styles.stat}>
+              <div className={styles.statLabel}>Total Market Cap</div>
+              <div className={styles.statValue}>
+                {formatCompact(g.total_market_cap.usd, "usd")}
+              </div>
+            </div>
 
-          <div className={styles.stat}>
-            <div className={styles.statLabel}>CMC20 Index</div>
-            <div className={styles.statValue}>{formatPrice(cmc20.current)}</div>
-            <div
-              className={`${styles.statSub} ${cmc20.changePct >= 0 ? styles.pos : styles.neg}`}
-            >
-              {cmc20.changePct >= 0 ? "+" : ""}
-              {cmc20.changePct.toFixed(2)}% ({period})
+            <div className={styles.stat}>
+              <div className={styles.statLabel}>BTC Dominance</div>
+              <div className={styles.statValue}>
+                {g.market_cap_percentage.btc?.toFixed(1)}%
+              </div>
+              <div className={styles.statSub} style={{ color: "#6b7280" }}>
+                ETH {g.market_cap_percentage.eth?.toFixed(1)}%
+              </div>
+            </div>
+
+            <div className={styles.stat}>
+              <div className={styles.statLabel}>CMC20 Index</div>
+              <div className={styles.statValue}>{formatPrice(cmc20.current)}</div>
+              <div
+                className={`${styles.statSub} ${cmc20.changePct >= 0 ? styles.pos : styles.neg}`}
+              >
+                {cmc20.changePct >= 0 ? "+" : ""}
+                {cmc20.changePct.toFixed(2)}% ({period})
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className={styles.chartsRow}>
           {coins.map(({ meta, points, current, changePct }) => (

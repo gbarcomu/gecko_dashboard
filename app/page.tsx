@@ -18,6 +18,10 @@ export default function HomePage() {
             <span className={styles.linkLabel}>Year</span>
             <span className={styles.linkSub}>1-year window</span>
           </Link>
+          <Link href="/hyperliquid" className={styles.link}>
+            <span className={styles.linkLabel}>Hyperliquid</span>
+            <span className={styles.linkSub}>month + exchange volume</span>
+          </Link>
         </div>
       </div>
     </main>

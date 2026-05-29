@@ -207,6 +207,22 @@ export interface MarketChart {
   total_volumes: [number, number][];
 }
 
+/** Daily BTC-denominated trade volume history for an exchange. */
+export async function getExchangeVolumeChart(
+  id: string,
+  days: number,
+): Promise<{ data: { t: number; value: number }[]; cached: boolean }> {
+  const res = await fetchCached<[number, string][]>(
+    `/exchanges/${encodeURIComponent(id)}/volume_chart`,
+    { days },
+    5 * 60_000,
+  );
+  return {
+    data: res.data.map(([t, v]) => ({ t, value: Number(v) })),
+    cached: res.cached,
+  };
+}
+
 export async function getMarketChart(
   coinId: string,
   days: number,
