@@ -181,11 +181,14 @@ export default async function ReportPage() {
                   <img src={w.image} alt={w.name} width={22} height={22} />
                   <span className={styles.winnerSym}>{w.symbol}</span>
                 </div>
-                <div className={styles.winnerPrice}>
-                  {formatPrice(w.current_price)}
-                </div>
-                <div className={styles.winnerChange}>
-                  +{w.change30d.toFixed(1)}%
+                <div className={styles.winnerCat}>{w.category ?? "—"}</div>
+                <div className={styles.winnerStats}>
+                  <span className={styles.winnerPrice}>
+                    {formatPrice(w.current_price)}
+                  </span>
+                  <span className={styles.winnerChange}>
+                    +{w.change30d.toFixed(1)}%
+                  </span>
                 </div>
               </div>
             ))}

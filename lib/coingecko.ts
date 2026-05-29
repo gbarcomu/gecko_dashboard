@@ -107,6 +107,24 @@ export interface Mover {
   image: string;
   current_price: number;
   change30d: number;
+  category: string | null;
+}
+
+/** A coin's primary (first-listed) CoinGecko category, if any. */
+export async function getCoinCategory(id: string): Promise<string | null> {
+  const res = await fetchCached<{ categories: string[] | null }>(
+    `/coins/${encodeURIComponent(id)}`,
+    {
+      localization: "false",
+      tickers: "false",
+      market_data: "false",
+      community_data: "false",
+      developer_data: "false",
+      sparkline: "false",
+    },
+    24 * 60 * 60_000, // categories rarely change
+  );
+  return (res.data.categories ?? []).filter(Boolean)[0] ?? null;
 }
 
 /**
@@ -132,22 +150,26 @@ export async function getTop30dWinners(
     5 * 60_000,
   );
 
-  const data: Mover[] = res.data
+  const top = res.data
     .filter((c) => c.price_change_percentage_30d_in_currency != null)
     .sort(
       (a, b) =>
         (b.price_change_percentage_30d_in_currency ?? 0) -
         (a.price_change_percentage_30d_in_currency ?? 0),
     )
-    .slice(0, limit)
-    .map((c) => ({
+    .slice(0, limit);
+
+  const data: Mover[] = await Promise.all(
+    top.map(async (c) => ({
       id: c.id,
       symbol: c.symbol,
       name: c.name,
       image: c.image,
       current_price: c.current_price,
       change30d: c.price_change_percentage_30d_in_currency ?? 0,
-    }));
+      category: await getCoinCategory(c.id),
+    })),
+  );
 
   return { data, cached: res.cached, fetchedAt: res.fetchedAt };
 }
