@@ -106,9 +106,11 @@ export interface Mover {
   name: string;
   image: string;
   current_price: number;
-  change30d: number;
+  change: number;
   category: string | null;
 }
+
+export type ChangePeriod = "30d" | "1y";
 
 /** A coin's primary (first-listed) CoinGecko category, if any. */
 export async function getCoinCategory(id: string): Promise<string | null> {
@@ -127,36 +129,42 @@ export async function getCoinCategory(id: string): Promise<string | null> {
   return (res.data.categories ?? []).filter(Boolean)[0] ?? null;
 }
 
+type MarketCoinWithChange = MarketCoin & {
+  price_change_percentage_30d_in_currency?: number | null;
+  price_change_percentage_1y_in_currency?: number | null;
+};
+
+function changeFor(c: MarketCoinWithChange, period: ChangePeriod): number | null {
+  return period === "1y"
+    ? (c.price_change_percentage_1y_in_currency ?? null)
+    : (c.price_change_percentage_30d_in_currency ?? null);
+}
+
 /**
- * Biggest 30-day gainers among the top `universe` coins by market cap.
+ * Biggest gainers over `period` among the top `universe` coins by market cap.
  * (CoinGecko's dedicated /coins/top_gainers_losers endpoint is paid-only, so
  * we sort the markets list ourselves.)
  */
-export async function getTop30dWinners(
+export async function getTopWinners(
+  period: ChangePeriod,
   limit: number,
   universe = 250,
 ): Promise<{ data: Mover[]; cached: boolean; fetchedAt: number }> {
-  const res = await fetchCached<
-    (MarketCoin & { price_change_percentage_30d_in_currency: number | null })[]
-  >(
+  const res = await fetchCached<MarketCoinWithChange[]>(
     "/coins/markets",
     {
       vs_currency: "usd",
       order: "market_cap_desc",
       per_page: universe,
       page: 1,
-      price_change_percentage: "30d",
+      price_change_percentage: period,
     },
     5 * 60_000,
   );
 
   const top = res.data
-    .filter((c) => c.price_change_percentage_30d_in_currency != null)
-    .sort(
-      (a, b) =>
-        (b.price_change_percentage_30d_in_currency ?? 0) -
-        (a.price_change_percentage_30d_in_currency ?? 0),
-    )
+    .filter((c) => changeFor(c, period) != null)
+    .sort((a, b) => (changeFor(b, period) ?? 0) - (changeFor(a, period) ?? 0))
     .slice(0, limit);
 
   const data: Mover[] = await Promise.all(
@@ -166,7 +174,7 @@ export async function getTop30dWinners(
       name: c.name,
       image: c.image,
       current_price: c.current_price,
-      change30d: c.price_change_percentage_30d_in_currency ?? 0,
+      change: changeFor(c, period) ?? 0,
       category: await getCoinCategory(c.id),
     })),
   );
