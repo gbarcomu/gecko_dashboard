@@ -90,8 +90,8 @@
 /* Compact top: stacked stats on the left, an exchange volume chart on the right */
 .compactTop {
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
   height: 152px;
   margin-bottom: 14px;
 }

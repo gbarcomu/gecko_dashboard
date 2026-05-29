@@ -76,6 +76,40 @@ async function loadIndexValue(id: string, days: number) {
   return { current: last, changePct };
 }
 
+// Convert daily BTC exchange volume to USD (× BTC price that day) and sum into
+// 7-day buckets for a weekly bar chart.
+function toWeeklyUsd(
+  daily: { t: number; value: number }[],
+  btcPoints: ChartPoint[],
+  fallbackPrice: number,
+): { label: string; value: number }[] {
+  const dayKey = (t: number) => new Date(t).toISOString().slice(0, 10);
+  const priceByDay = new Map<string, number>();
+  for (const p of btcPoints) priceByDay.set(dayKey(p.t), p.price);
+
+  const sorted = [...daily].sort((a, b) => a.t - b.t);
+  if (sorted.length === 0) return [];
+  const start = sorted[0].t;
+  const week = 7 * 86_400_000;
+  const buckets = new Map<number, { t: number; sum: number }>();
+  for (const d of sorted) {
+    const usd = d.value * (priceByDay.get(dayKey(d.t)) ?? fallbackPrice);
+    const wk = Math.floor((d.t - start) / week);
+    const b = buckets.get(wk) ?? { t: start + wk * week, sum: 0 };
+    b.sum += usd;
+    buckets.set(wk, b);
+  }
+  return [...buckets.values()]
+    .sort((a, b) => a.t - b.t)
+    .map((b) => ({
+      label: new Date(b.t).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      value: b.sum,
+    }));
+}
+
 function ChangeBadge({ pct, periodShort }: { pct: number; periodShort: string }) {
   const up = pct >= 0;
   return (
@@ -120,7 +154,8 @@ export default async function Snapshot({
           toDataUri(CMC20_LOGO),
           toDataUri(exchange.logo),
         ]);
-        return { points: vol.data, cmc20Logo, exLogo };
+        const points = toWeeklyUsd(vol.data, btc.points, btc.current);
+        return { points, cmc20Logo, exLogo };
       })()
     : null;
 
@@ -186,7 +221,7 @@ export default async function Snapshot({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={ex.exLogo} alt={exchange.name} width={20} height={20} />
                 <span>{exchange.name}</span>
-                <span className={styles.exSub}>· 30d volume (BTC)</span>
+                <span className={styles.exSub}>· weekly volume (USD)</span>
               </div>
               <div className={styles.exFill}>
                 <StaticVolumeChart points={ex.points} color="#2563eb" />
